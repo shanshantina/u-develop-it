@@ -1,8 +1,10 @@
 const express = require('express');
-const PORT = process.env.PORT || 3001;
-const app = express();
 const sqlite3 = require('sqlite3').verbose();
 const inputCheck = require('./utils/inputCheck');
+
+// create PORT
+const PORT = process.env.PORT || 3001;
+const app = express();
 
 // express middleware
 app.use(express.urlencoded({ extended: false }));
@@ -14,6 +16,24 @@ const db = new sqlite3.Database('./db/election.db', err => {
         return console.error(err.message);
     }
     console.log('Connected to the election database.');
+});
+
+
+//all()method to run the SQL query and executes the callback with all the resulting rows that match the query
+// GET all candidates
+app.get('/api/candidates', (req, res) => {
+    const sql = `SELECT * FROM candidates`;
+    const params = [];
+    db.all(sql, params, (err, rows) => {
+        if (err) {
+            res.status(500).json({error: err.message});
+            return;
+        }
+        res.json({
+            message: 'success',
+            data: rows
+        });
+    });
 });
 
 
@@ -32,23 +52,6 @@ app.get('/api/candidate/:id', (req, res) => {
             data: row
         });
     }); 
-});
-
-
-// Delete a candidate
-app.delete('/api/candidate/:id', (req, res) => {
-    const sql = `DELETE FROM candidates WHERE id = ?`;
-    const params = [req.params.id];
-    db.run(`DELETE FROM candidates WHERE id = ?`, 1, function(err, result) {
-        if (err) {
-          res.status(400).json({error: err.message});
-          return;
-        }
-        res.json({
-            message: 'successfully deleted',
-            changes: this.changes
-        });
-    });
 });
 
 
@@ -78,20 +81,18 @@ app.post('/api/candidate', ({body}, res) => {
 });
 
 
-
-//all()method to run the SQL query and executes the callback with all the resulting rows that match the query
-// GET all candidates
-app.get('/api/candidates', (req, res) => {
-    const sql = `SELECT * FROM candidates`;
-    const params = [];
-    db.all(sql, params, (err, rows) => {
+// Delete a candidate
+app.delete('/api/candidate/:id', (req, res) => {
+    const sql = `DELETE FROM candidates WHERE id = ?`;
+    const params = [req.params.id];
+    db.run(sql, params, 1, function(err, result) {
         if (err) {
-            res.status(500).json({error: err.message});
-            return;
+          res.status(400).json({error: err.message});
+          return;
         }
         res.json({
-            message: 'success',
-            data: rows
+            message: 'successfully deleted',
+            changes: this.changes
         });
     });
 });
@@ -101,6 +102,7 @@ app.get('/api/candidates', (req, res) => {
 app.use((req, res) => {
     res.status(404).end();
 });
+
 
 // start server after DB connection
 db.on('open', () => {
