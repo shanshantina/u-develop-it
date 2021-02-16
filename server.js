@@ -104,7 +104,8 @@ app.post('/api/candidate', ({body}, res) => {
     if (errors) {
         res.status(400).json({error: errors});
         return;
-    }
+    };
+
     const sql = `INSERT INTO candidates (first_name, last_name, industry_connected)
              VALUES (?,?,?)`;
     const params = [body.first_name, body.last_name, body.industry_connected];
@@ -160,12 +161,17 @@ app.delete('/api/party/:id', (req, res) =>{
 // PUT request for updating changes
 app.put('/api/candidate/:id', (req, res) => {
     const errors = inputCheck(req.body, 'party_id');
+    if (errors) {
+        res.status(400).json({ error: errors });
+        return;
+    };
+
     const sql = `UPDATE candidates SET party_id = ?
                  WHERE id = ?`;
     const params = [req.body.party_id, req.params.id];
     db.run(sql, params, function(err, result) {
-        if (errors) {
-            res.status(400).json({ error: errors });
+        if (err) {
+            res.status(400).json({ error: err.message });
             return;
         }
         res.json({
